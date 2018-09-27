@@ -204,7 +204,7 @@ public class CropOverlayView extends View {
   public void setCropShape(CropImageView.CropShape cropShape) {
     if (mCropShape != cropShape) {
       mCropShape = cropShape;
-        if (Build.VERSION.SDK_INT <= 17) {
+      if (Build.VERSION.SDK_INT <= 17) {
         if (mCropShape == CropImageView.CropShape.OVAL) {
           mOriginalLayerType = getLayerType();
           if (mOriginalLayerType != View.LAYER_TYPE_SOFTWARE) {
@@ -272,7 +272,7 @@ public class CropOverlayView extends View {
   public void setAspectRatioX(int aspectRatioX) {
     if (aspectRatioX <= 0) {
       throw new IllegalArgumentException(
-          "Cannot set aspect ratio value to a number less than or equal to 0.");
+              "Cannot set aspect ratio value to a number less than or equal to 0.");
     } else if (mAspectRatioX != aspectRatioX) {
       mAspectRatioX = aspectRatioX;
       mTargetAspectRatio = ((float) mAspectRatioX) / mAspectRatioY;
@@ -297,7 +297,7 @@ public class CropOverlayView extends View {
   public void setAspectRatioY(int aspectRatioY) {
     if (aspectRatioY <= 0) {
       throw new IllegalArgumentException(
-          "Cannot set aspect ratio value to a number less than or equal to 0.");
+              "Cannot set aspect ratio value to a number less than or equal to 0.");
     } else if (mAspectRatioY != aspectRatioY) {
       mAspectRatioY = aspectRatioY;
       mTargetAspectRatio = ((float) mAspectRatioX) / mAspectRatioY;
@@ -320,7 +320,7 @@ public class CropOverlayView extends View {
 
   /** Set multi touch functionality to enabled/disabled. */
   public boolean setMultiTouchEnabled(boolean multiTouchEnabled) {
-      if (mMultiTouchEnabled != multiTouchEnabled) {
+    if (mMultiTouchEnabled != multiTouchEnabled) {
       mMultiTouchEnabled = multiTouchEnabled;
       if (mMultiTouchEnabled && mScaleDetector == null) {
         mScaleDetector = new ScaleGestureDetector(getContext(), new ScaleListener());
@@ -351,9 +351,9 @@ public class CropOverlayView extends View {
    * limits appropriately.
    */
   public void setCropWindowLimits(
-      float maxWidth, float maxHeight, float scaleFactorWidth, float scaleFactorHeight) {
+          float maxWidth, float maxHeight, float scaleFactorWidth, float scaleFactorHeight) {
     mCropWindowHandler.setCropWindowLimits(
-        maxWidth, maxHeight, scaleFactorWidth, scaleFactorHeight);
+            maxWidth, maxHeight, scaleFactorWidth, scaleFactorHeight);
   }
 
   /** Get crop window initial rectangle. */
@@ -411,7 +411,7 @@ public class CropOverlayView extends View {
     mBorderCornerOffset = options.borderCornerOffset;
     mBorderCornerLength = options.borderCornerLength;
     mBorderCornerPaint =
-        getNewPaintOrNull(options.borderCornerThickness, options.borderCornerColor);
+            getNewPaintOrNull(options.borderCornerThickness, options.borderCornerColor);
 
     mGuidelinePaint = getNewPaintOrNull(options.guidelinesThickness, options.guidelinesColor);
 
@@ -446,12 +446,12 @@ public class CropOverlayView extends View {
     if (mInitialCropWindowRect.width() > 0 && mInitialCropWindowRect.height() > 0) {
       // Get crop window position relative to the displayed image.
       rect.left =
-          leftLimit + mInitialCropWindowRect.left / mCropWindowHandler.getScaleFactorWidth();
+              leftLimit + mInitialCropWindowRect.left / mCropWindowHandler.getScaleFactorWidth();
       rect.top = topLimit + mInitialCropWindowRect.top / mCropWindowHandler.getScaleFactorHeight();
       rect.right =
-          rect.left + mInitialCropWindowRect.width() / mCropWindowHandler.getScaleFactorWidth();
+              rect.left + mInitialCropWindowRect.width() / mCropWindowHandler.getScaleFactorWidth();
       rect.bottom =
-          rect.top + mInitialCropWindowRect.height() / mCropWindowHandler.getScaleFactorHeight();
+              rect.top + mInitialCropWindowRect.height() / mCropWindowHandler.getScaleFactorHeight();
 
       // Correct for floating point errors. Crop rect boundaries should not exceed the source Bitmap
       // bounds.
@@ -477,7 +477,7 @@ public class CropOverlayView extends View {
 
         // Limits the aspect ratio to no less than 40 wide or 40 tall
         float cropWidth =
-            Math.max(mCropWindowHandler.getMinCropWidth(), rect.height() * mTargetAspectRatio);
+                Math.max(mCropWindowHandler.getMinCropWidth(), rect.height() * mTargetAspectRatio);
 
         float halfCropWidth = cropWidth / 2f;
         rect.left = centerX - halfCropWidth;
@@ -492,7 +492,7 @@ public class CropOverlayView extends View {
 
         // Limits the aspect ratio to no less than 40 wide or 40 tall
         float cropHeight =
-            Math.max(mCropWindowHandler.getMinCropHeight(), rect.width() / mTargetAspectRatio);
+                Math.max(mCropWindowHandler.getMinCropHeight(), rect.width() / mTargetAspectRatio);
 
         float halfCropHeight = cropHeight / 2f;
         rect.top = centerY - halfCropHeight;
@@ -625,14 +625,24 @@ public class CropOverlayView extends View {
       }
     } else {
       mPath.reset();
-        if (Build.VERSION.SDK_INT <= 17 && mCropShape == CropImageView.CropShape.OVAL) {
+      if (Build.VERSION.SDK_INT <= 17 && mCropShape == CropImageView.CropShape.OVAL) {
         mDrawRect.set(rect.left + 2, rect.top + 2, rect.right - 2, rect.bottom - 2);
       } else {
         mDrawRect.set(rect.left, rect.top, rect.right, rect.bottom);
       }
       mPath.addOval(mDrawRect, Path.Direction.CW);
       canvas.save();
-      canvas.clipPath(mPath, Region.Op.XOR);
+      // Ops other then Region.Op.INTERSECT and Region.Op.DIFFERENCE are deprecated since API 26
+      // as they have the ability to expand the clip. A new method Canvas.clipOutPath(Path) has been introduce
+      // to solve this issue. Since Android P using any ops other than Region.Op.INTERSECT and Region.Op.DIFFERENCE
+      // in Canvas.clipPath(Path, Region.Op) leads to IllegalArgumentException.
+      // More info can be found here:
+      // https://developer.android.com/reference/android/graphics/Canvas#clipPath(android.graphics.Path,%20android.graphics.Region.Op)
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        canvas.clipOutPath(mPath);
+      } else {
+        canvas.clipPath(mPath, Region.Op.XOR);
+      }
       canvas.drawRect(left, top, right, bottom, mBackgroundPaint);
       canvas.restore();
     }
@@ -712,8 +722,8 @@ public class CropOverlayView extends View {
 
       // for rectangle crop shape we allow the corners to be offset from the borders
       float w =
-          cornerWidth / 2
-              + (mCropShape == CropImageView.CropShape.RECTANGLE ? mBorderCornerOffset : 0);
+              cornerWidth / 2
+                      + (mCropShape == CropImageView.CropShape.RECTANGLE ? mBorderCornerOffset : 0);
 
       RectF rect = mCropWindowHandler.getRect();
       rect.inset(w, w);
@@ -723,59 +733,59 @@ public class CropOverlayView extends View {
 
       // Top left
       canvas.drawLine(
-          rect.left - cornerOffset,
-          rect.top - cornerExtension,
-          rect.left - cornerOffset,
-          rect.top + mBorderCornerLength,
-          mBorderCornerPaint);
+              rect.left - cornerOffset,
+              rect.top - cornerExtension,
+              rect.left - cornerOffset,
+              rect.top + mBorderCornerLength,
+              mBorderCornerPaint);
       canvas.drawLine(
-          rect.left - cornerExtension,
-          rect.top - cornerOffset,
-          rect.left + mBorderCornerLength,
-          rect.top - cornerOffset,
-          mBorderCornerPaint);
+              rect.left - cornerExtension,
+              rect.top - cornerOffset,
+              rect.left + mBorderCornerLength,
+              rect.top - cornerOffset,
+              mBorderCornerPaint);
 
       // Top right
       canvas.drawLine(
-          rect.right + cornerOffset,
-          rect.top - cornerExtension,
-          rect.right + cornerOffset,
-          rect.top + mBorderCornerLength,
-          mBorderCornerPaint);
+              rect.right + cornerOffset,
+              rect.top - cornerExtension,
+              rect.right + cornerOffset,
+              rect.top + mBorderCornerLength,
+              mBorderCornerPaint);
       canvas.drawLine(
-          rect.right + cornerExtension,
-          rect.top - cornerOffset,
-          rect.right - mBorderCornerLength,
-          rect.top - cornerOffset,
-          mBorderCornerPaint);
+              rect.right + cornerExtension,
+              rect.top - cornerOffset,
+              rect.right - mBorderCornerLength,
+              rect.top - cornerOffset,
+              mBorderCornerPaint);
 
       // Bottom left
       canvas.drawLine(
-          rect.left - cornerOffset,
-          rect.bottom + cornerExtension,
-          rect.left - cornerOffset,
-          rect.bottom - mBorderCornerLength,
-          mBorderCornerPaint);
+              rect.left - cornerOffset,
+              rect.bottom + cornerExtension,
+              rect.left - cornerOffset,
+              rect.bottom - mBorderCornerLength,
+              mBorderCornerPaint);
       canvas.drawLine(
-          rect.left - cornerExtension,
-          rect.bottom + cornerOffset,
-          rect.left + mBorderCornerLength,
-          rect.bottom + cornerOffset,
-          mBorderCornerPaint);
+              rect.left - cornerExtension,
+              rect.bottom + cornerOffset,
+              rect.left + mBorderCornerLength,
+              rect.bottom + cornerOffset,
+              mBorderCornerPaint);
 
       // Bottom left
       canvas.drawLine(
-          rect.right + cornerOffset,
-          rect.bottom + cornerExtension,
-          rect.right + cornerOffset,
-          rect.bottom - mBorderCornerLength,
-          mBorderCornerPaint);
+              rect.right + cornerOffset,
+              rect.bottom + cornerExtension,
+              rect.right + cornerOffset,
+              rect.bottom - mBorderCornerLength,
+              mBorderCornerPaint);
       canvas.drawLine(
-          rect.right + cornerExtension,
-          rect.bottom + cornerOffset,
-          rect.right - mBorderCornerLength,
-          rect.bottom + cornerOffset,
-          mBorderCornerPaint);
+              rect.right + cornerExtension,
+              rect.bottom + cornerOffset,
+              rect.right - mBorderCornerLength,
+              rect.bottom + cornerOffset,
+              mBorderCornerPaint);
     }
   }
 
@@ -864,15 +874,15 @@ public class CropOverlayView extends View {
       }
 
       mMoveHandler.move(
-          rect,
-          x,
-          y,
-          mCalcBounds,
-          mViewWidth,
-          mViewHeight,
-          snapRadius,
-          mFixAspectRatio,
-          mTargetAspectRatio);
+              rect,
+              x,
+              y,
+              mCalcBounds,
+              mViewWidth,
+              mViewHeight,
+              snapRadius,
+              mFixAspectRatio,
+              mTargetAspectRatio);
       mCropWindowHandler.setRect(rect);
       callOnCropWindowChanged(true);
       invalidate();
@@ -1014,11 +1024,11 @@ public class CropOverlayView extends View {
       float newBottom = y + dY;
 
       if (newLeft < newRight
-          && newTop <= newBottom
-          && newLeft >= 0
-          && newRight <= mCropWindowHandler.getMaxCropWidth()
-          && newTop >= 0
-          && newBottom <= mCropWindowHandler.getMaxCropHeight()) {
+              && newTop <= newBottom
+              && newLeft >= 0
+              && newRight <= mCropWindowHandler.getMaxCropWidth()
+              && newTop >= 0
+              && newBottom <= mCropWindowHandler.getMaxCropHeight()) {
 
         rect.set(newLeft, newTop, newRight, newBottom);
         mCropWindowHandler.setRect(rect);
